@@ -1,130 +1,60 @@
 import dotenv from 'dotenv';
-import { EnvironmentEnum } from '../utils/constants';
+import { z } from 'zod';
+import {
+  CONSUMED_ROUTING_KEYS,
+  EnvironmentEnum,
+  RABBITMQ_EXCHANGE,
+  RABBITMQ_QUEUE,
+} from '../utils/constants';
+
 dotenv.config();
 
-interface MailConfig {
-  companyName: string;
-  companyEmail: string;
-  logoUrl: string;
-  supportEmail: string;
-  appUrl: string;
-  resendApiKey: string;
+const environmentSchema = z.object({
+  NODE_ENV: z
+    .enum([EnvironmentEnum.Development, EnvironmentEnum.Production, EnvironmentEnum.Test])
+    .default(EnvironmentEnum.Development),
+  SERVICE_NAME: z.string().trim().min(1).default('deliveroo-clone-notification-service'),
+  LOG_LEVEL: z.string().trim().min(1).default('info'),
+  APP_VERSION: z.string().trim().min(1).default('1.0.0'),
+  RABBITMQ_URL: z
+    .string()
+    .trim()
+    .min(1)
+    .refine((value) => {
+      try {
+        const protocol = new URL(value).protocol;
+        return protocol === 'amqp:' || protocol === 'amqps:';
+      } catch {
+        return false;
+      }
+    }, 'RABBITMQ_URL must be a valid amqp/amqps URL'),
+  RABBITMQ_EXCHANGE: z.string().trim().min(1).default(RABBITMQ_EXCHANGE),
+  RABBITMQ_QUEUE: z.string().trim().min(1).default(RABBITMQ_QUEUE),
+});
+
+const parsedEnvironment = environmentSchema.safeParse(process.env);
+
+if (!parsedEnvironment.success) {
+  throw new Error(
+    `Invalid environment variables: ${parsedEnvironment.error.issues
+      .map((issue) => `${issue.path.join('.') || 'env'}: ${issue.message}`)
+      .join(', ')}`
+  );
 }
 
-interface RateLimitConfig {
-  windowMs: number;
-  max: number;
-}
+const env = parsedEnvironment.data;
 
-interface Environment {
-  port: number;
-  env: EnvironmentEnum;
-  databaseUrl: string;
-  baseUrl: string;
-  version: string;
-
+export const environment = {
+  env: env.NODE_ENV,
+  serviceName: env.SERVICE_NAME,
+  version: env.APP_VERSION,
   logging: {
-    level: string;
-  };
-  bffAPIKey: string;
-  serviceName: string;
-  mail: MailConfig;
-  rateLimit: RateLimitConfig;
-}
-
-function requireEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-  return value;
-}
-
-function optionalEnv(name: string, defaultValue: string): string {
-  return process.env[name] || defaultValue;
-}
-
-const parsePositiveInt = (raw: string, name: string): number => {
-  const value = Number(raw);
-  if (Number.isNaN(value) || value <= 0) {
-    throw new Error(`Invalid ${name} value: ${value}. Must be a positive integer.`);
-  }
-  return value;
-};
-
-function loadMailConfig(env: EnvironmentEnum): MailConfig {
-  const isProduction = env === EnvironmentEnum.Production;
-
-  if (isProduction) {
-    return {
-      companyName: requireEnv('COMPANY_NAME'),
-      companyEmail: requireEnv('COMPANY_EMAIL'),
-      logoUrl: requireEnv('LOGO_URL'),
-      supportEmail: requireEnv('SUPPORT_EMAIL'),
-      appUrl: requireEnv('APP_URL'),
-      resendApiKey: requireEnv('RESEND_API_KEY'),
-    };
-  }
-
-  return {
-    companyName: optionalEnv('COMPANY_NAME', 'Local Development'),
-    companyEmail: optionalEnv('COMPANY_EMAIL', 'noreply@localhost'),
-    logoUrl: optionalEnv('LOGO_URL', 'https://via.placeholder.com/200?text=Logo'),
-    supportEmail: optionalEnv('SUPPORT_EMAIL', 'support@localhost'),
-    appUrl: optionalEnv('APP_URL', 'http://localhost:3000'),
-    resendApiKey: optionalEnv('RESEND_API_KEY', 'test-key-development-only'),
-  };
-}
-
-function loadRateLimitConfig(env: EnvironmentEnum): RateLimitConfig {
-  const defaults = {
-    [EnvironmentEnum.Production]: {
-      windowMs: 15 * 60 * 1000,
-      max: 100,
-    },
-    [EnvironmentEnum.Development]: {
-      windowMs: 15 * 60 * 1000,
-      max: 1000,
-    },
-    [EnvironmentEnum.Test]: {
-      windowMs: 1 * 60 * 1000,
-      max: 10000,
-    },
-  };
-
-  const envDefaults = defaults[env];
-
-  return {
-    windowMs: parsePositiveInt(
-      optionalEnv('RATE_LIMIT_WINDOW_MS', envDefaults.windowMs.toString()),
-      'RATE_LIMIT_WINDOW_MS'
-    ),
-    max: parsePositiveInt(
-      optionalEnv('RATE_LIMIT_MAX', envDefaults.max.toString()),
-      'RATE_LIMIT_MAX'
-    ),
-  };
-}
-
-const rawEnv = optionalEnv('NODE_ENV', 'development');
-const validEnvs = Object.values(EnvironmentEnum);
-if (!validEnvs.includes(rawEnv as EnvironmentEnum)) {
-  throw new Error(`Invalid NODE_ENV value: ${rawEnv}. Must be one of ${validEnvs.join(', ')}`);
-}
-
-const environment_raw = rawEnv as EnvironmentEnum;
-
-export const environment: Environment = {
-  port: parsePositiveInt(optionalEnv('PORT', '3000'), 'PORT'),
-  env: environment_raw,
-  version: optionalEnv('APP_VERSION', '1.0.0'),
-  databaseUrl: requireEnv('DATABASE_URL'),
-  baseUrl: optionalEnv('BASE_URL', 'http://localhost:3000'),
-  logging: {
-    level: optionalEnv('LOG_LEVEL', 'info'),
+    level: env.LOG_LEVEL,
   },
-  bffAPIKey: requireEnv('BFF_API_KEY'),
-  mail: loadMailConfig(environment_raw),
-  rateLimit: loadRateLimitConfig(environment_raw),
-  serviceName: requireEnv('SERVICE_NAME'),
-};
+  rabbitmq: {
+    url: env.RABBITMQ_URL,
+    exchange: env.RABBITMQ_EXCHANGE,
+    queue: env.RABBITMQ_QUEUE,
+    routingKeys: [...CONSUMED_ROUTING_KEYS],
+  },
+} as const;
