@@ -13,6 +13,7 @@ const pinoOptions: pino.LoggerOptions = {
   base: {
     service: environment.serviceName,
     env: environment.env,
+    version: environment.version,
   },
 };
 

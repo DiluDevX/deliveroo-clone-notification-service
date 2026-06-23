@@ -1,70 +1,61 @@
-import express, { ErrorRequestHandler } from 'express';
-import { connectDatabase, disconnectDatabase } from './config/database';
-import { logger } from './utils/logger';
+import { EventConsumer } from './messaging/event-consumer';
 import { environment } from './config/environment';
-import { errorHandler } from './middleware/error-handler.middleware';
-import { rateLimiterMiddleware } from './middleware/rate-limiter.middleware';
-import routes from './routes';
+import { logger } from './utils/logger';
 
-const app = express();
+const consumer = new EventConsumer();
 
 let isShuttingDown = false;
 
-// Parse JSON request bodies
-app.use(express.json());
-
-// Parse URL-encoded request bodies
-app.use(express.urlencoded({ extended: true }));
-
-// global rate limiter
-app.use(rateLimiterMiddleware);
-
-// Routes
-app.use(routes);
-
-app.use(errorHandler as ErrorRequestHandler);
-
-async function startServer(): Promise<void> {
+async function startWorker(): Promise<void> {
   try {
-    await connectDatabase();
+    await consumer.start();
 
-    const server = app.listen(environment.port, () => {
-      logger.info(
-        { port: environment.port, env: environment.env, service: environment.serviceName },
-        'Server started successfully'
-      );
-    });
-
-    // Graceful shutdown handlers
-    const shutdown = async (signal: string) => {
-      if (isShuttingDown) {
-        return;
-      }
-      isShuttingDown = true;
-
-      logger.info(`${signal} received. Shutting down gracefully...`);
-
-      try {
-        await new Promise<void>((resolve) => {
-          server.close(() => resolve());
-        });
-        logger.info('HTTP server closed');
-
-        await disconnectDatabase();
-      } catch (error) {
-        logger.error({ error }, 'Error during shutdown');
-        process.exit(1);
-      }
-
-      process.exit(0);
-    };
-
-    process.on('SIGTERM', () => shutdown('SIGTERM'));
-    process.on('SIGINT', () => shutdown('SIGINT'));
+    logger.info(
+      {
+        env: environment.env,
+        service: environment.serviceName,
+      },
+      'Notification worker started'
+    );
   } catch (error) {
-    logger.fatal({ error }, 'Failed to start server');
+    logger.fatal({ error }, 'Failed to start notification worker');
     process.exit(1);
   }
 }
 
-startServer();
+async function shutdown(signal: string): Promise<void> {
+  if (isShuttingDown) {
+    return;
+  }
+
+  isShuttingDown = true;
+  logger.info({ signal }, 'Shutdown signal received');
+
+  try {
+    await consumer.stop();
+    logger.info('Notification worker shut down gracefully');
+    process.exit(0);
+  } catch (error) {
+    logger.fatal({ error }, 'Error during shutdown');
+    process.exit(1);
+  }
+}
+
+process.on('SIGINT', () => {
+  void shutdown('SIGINT');
+});
+
+process.on('SIGTERM', () => {
+  void shutdown('SIGTERM');
+});
+
+process.on('unhandledRejection', (reason) => {
+  logger.error({ reason }, 'Unhandled promise rejection');
+});
+
+process.on('uncaughtException', (error) => {
+  logger.fatal({ error }, 'Uncaught exception');
+  void shutdown('uncaughtException');
+});
+
+void startWorker();
