@@ -7,12 +7,25 @@ export class RabbitMqClient {
 
   private channel: Channel | null = null;
 
+  private connected = false;
+
   async connect(): Promise<Channel> {
     if (this.channel) {
       return this.channel;
     }
 
     this.connection = await amqp.connect(environment.rabbitmq.url);
+    this.connected = true;
+    this.connection.on('close', () => {
+      this.connected = false;
+      this.connection = null;
+      this.channel = null;
+      logger.warn('RabbitMQ connection closed');
+    });
+    this.connection.on('error', (error) => {
+      this.connected = false;
+      logger.error({ error }, 'RabbitMQ connection error');
+    });
     this.channel = await this.connection.createChannel();
 
     await this.channel.assertExchange(environment.rabbitmq.exchange, 'topic', { durable: true });
@@ -51,5 +64,9 @@ export class RabbitMqClient {
       }
       this.connection = null;
     }
+  }
+
+  isConnected(): boolean {
+    return this.connected && this.connection !== null && this.channel !== null;
   }
 }

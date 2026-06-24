@@ -5,6 +5,7 @@ Backend worker service for consuming Deliveroo domain events from RabbitMQ and p
 ## What this service does
 
 - Connects to RabbitMQ using `RABBITMQ_URL`
+- Exposes lightweight health endpoints for container/deploy checks
 - Consumes events from exchange `deliveroo.events`
 - Uses queue `notification.events`
 - Handles routing keys:
@@ -33,6 +34,7 @@ Backend worker service for consuming Deliveroo domain events from RabbitMQ and p
 
 | Variable            | Required | Default                                | Description                            |
 | ------------------- | -------- | -------------------------------------- | -------------------------------------- |
+| `PORT`              | No       | `4010`                                 | Health server port                     |
 | `RABBITMQ_URL`      | Yes      | -                                      | RabbitMQ connection URL (`amqp://...`) |
 | `SERVICE_NAME`      | No       | `deliveroo-clone-notification-service` | Service name in logs                   |
 | `NODE_ENV`          | No       | `development`                          | `development`, `production`, `test`    |
@@ -70,3 +72,79 @@ npm run lint:check
 npm run format:check
 npm run types:check
 ```
+
+## Health endpoints
+
+The service is still a worker, but it exposes a small HTTP server for deployment checks.
+
+| Endpoint        | Meaning                                                   |
+| --------------- | --------------------------------------------------------- |
+| `/`             | Basic health check                                        |
+| `/health`       | Basic health check                                        |
+| `/health/live`  | Process liveness check                                    |
+| `/health/ready` | Readiness check; requires RabbitMQ consumer to be running |
+
+Example:
+
+```bash
+curl http://localhost:4010/health/ready
+```
+
+## Azure VM environment
+
+For GitHub Actions development deployment, create the environment secret:
+
+```txt
+NOTIFICATION_SERVICE_ENV_DEV
+```
+
+Example value:
+
+```env
+NODE_ENV=development
+PORT=4010
+SERVICE_NAME=deliveroo-clone-notification-service
+LOG_LEVEL=info
+RABBITMQ_URL=amqp://deliveroo:strong-password@rabbitmq:5672
+RABBITMQ_EXCHANGE=deliveroo.events
+RABBITMQ_QUEUE=notification.events
+```
+
+This service also expects the same repository/environment values used by the other Azure-deployed services:
+
+- `ACR_LOGIN_SERVER_DEV`
+- `ACR_USERNAME_DEV`
+- `ACR_PASSWORD_DEV`
+- `RELEASE_TOKEN`
+
+The reusable Azure workflow also supports production names if you later create a separate production environment:
+
+- `ACR_LOGIN_SERVER_PROD`
+- `ACR_USERNAME_PROD`
+- `ACR_PASSWORD_PROD`
+- `NOTIFICATION_SERVICE_ENV_PROD`
+
+## RabbitMQ on the Azure VM
+
+Run RabbitMQ on the same Docker network as the services:
+
+```bash
+docker network inspect deliveroo-dev >/dev/null 2>&1 || docker network create deliveroo-dev
+
+docker run -d \
+  --name rabbitmq \
+  --network deliveroo-dev \
+  --restart unless-stopped \
+  -e RABBITMQ_DEFAULT_USER=deliveroo \
+  -e RABBITMQ_DEFAULT_PASS=strong-password \
+  -p 127.0.0.1:15672:15672 \
+  rabbitmq:3-management
+```
+
+Do not expose RabbitMQ port `5672` or the management UI publicly. Use an SSH tunnel for the UI:
+
+```bash
+ssh -i path/to/key.pem -L 15672:127.0.0.1:15672 deliveroo@your-vm-ip
+```
+
+Then open <http://localhost:15672>.

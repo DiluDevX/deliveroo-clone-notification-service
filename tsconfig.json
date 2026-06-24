@@ -4,6 +4,7 @@
     "module": "CommonJS",
     "lib": ["ES2021"],
     "outDir": "./dist",
+    "rootDir": "./src",
     "strict": true,
     "strictNullChecks": true,
     "strictFunctionTypes": true,
@@ -23,8 +24,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "skipLibCheck": true,
-    "moduleResolution": "Node"
+    "skipLibCheck": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

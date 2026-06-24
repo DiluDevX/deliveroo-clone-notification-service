@@ -26,7 +26,7 @@ ARG ENV=production
 ARG APP_VERSION=unknown
 ENV ENV=$ENV \
     APP_VERSION=$APP_VERSION \
-    NODE_ENV=production
+    NODE_ENV=$ENV
 
 COPY --from=deps --chown=app:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=app:nodejs /app/dist ./dist
@@ -36,6 +36,7 @@ COPY --chown=app:nodejs docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 
 USER app
+EXPOSE 4010
 
 ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["node", "dist/index.js"]

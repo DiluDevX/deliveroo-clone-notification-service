@@ -14,6 +14,8 @@ export class EventConsumer {
 
   private consumerTag: string | null = null;
 
+  private isConsuming = false;
+
   async start(): Promise<void> {
     this.channel = await this.rabbitMqClient.connect();
     await this.channel.prefetch(10);
@@ -27,6 +29,7 @@ export class EventConsumer {
     );
 
     this.consumerTag = consumed.consumerTag;
+    this.isConsuming = true;
 
     logger.info(
       {
@@ -45,10 +48,15 @@ export class EventConsumer {
 
     this.consumerTag = null;
     this.channel = null;
+    this.isConsuming = false;
 
     await this.rabbitMqClient.close();
 
     logger.info('Event consumer stopped');
+  }
+
+  isReady(): boolean {
+    return this.isConsuming && this.channel !== null && this.rabbitMqClient.isConnected();
   }
 
   private async consumeMessage(message: ConsumeMessage | null): Promise<void> {

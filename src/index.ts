@@ -1,14 +1,24 @@
 import { EventConsumer } from './messaging/event-consumer';
 import { environment } from './config/environment';
+import { HealthServer } from './health/health-server';
 import { logger } from './utils/logger';
 
 const consumer = new EventConsumer();
+const healthServer = new HealthServer({
+  isReady: () => consumer.isReady(),
+});
 
 let isShuttingDown = false;
 
 async function startWorker(): Promise<void> {
   try {
     await consumer.start();
+    try {
+      await healthServer.start();
+    } catch (error) {
+      await consumer.stop();
+      throw error;
+    }
 
     logger.info(
       {
@@ -32,6 +42,7 @@ async function shutdown(signal: string): Promise<void> {
   logger.info({ signal }, 'Shutdown signal received');
 
   try {
+    await healthServer.stop();
     await consumer.stop();
     logger.info('Notification worker shut down gracefully');
     process.exit(0);

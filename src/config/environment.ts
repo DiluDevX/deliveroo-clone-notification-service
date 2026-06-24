@@ -10,6 +10,7 @@ import {
 dotenv.config();
 
 const environmentSchema = z.object({
+  PORT: z.coerce.number().int().positive().default(4010),
   NODE_ENV: z
     .enum([EnvironmentEnum.Development, EnvironmentEnum.Production, EnvironmentEnum.Test])
     .default(EnvironmentEnum.Development),
@@ -45,6 +46,7 @@ if (!parsedEnvironment.success) {
 const env = parsedEnvironment.data;
 
 export const environment = {
+  port: env.PORT,
   env: env.NODE_ENV,
   serviceName: env.SERVICE_NAME,
   version: env.APP_VERSION,
