@@ -53,7 +53,7 @@ export async function handleOrderEvent(
       return envelope;
     }
 
-    if (order.paymentMethod === 'CARD') {
+    if (order.paymentMethod?.toLowerCase() === 'card') {
       logger.info(
         { eventId: envelope.eventId, orderId: order.orderId },
         'Card order created. Waiting for payment event before sending email'
