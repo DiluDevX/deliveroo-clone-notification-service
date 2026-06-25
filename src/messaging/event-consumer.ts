@@ -84,6 +84,7 @@ export class EventConsumer {
         case 'payment.succeeded':
         case 'payment.failed':
         case 'payment.canceled':
+        case 'payment.refunded':
           await handlePaymentEvent(payload, routingKey);
           this.channel.ack(message);
           return;

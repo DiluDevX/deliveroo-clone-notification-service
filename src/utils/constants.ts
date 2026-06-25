@@ -14,6 +14,7 @@ export const CONSUMED_ROUTING_KEYS = [
   'payment.succeeded',
   'payment.failed',
   'payment.canceled',
+  'payment.refunded',
 ] as const;
 
 export type ConsumedRoutingKey = (typeof CONSUMED_ROUTING_KEYS)[number];

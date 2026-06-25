@@ -15,6 +15,7 @@ Backend worker service for consuming Deliveroo domain events from RabbitMQ and p
   - `payment.succeeded`
   - `payment.failed`
   - `payment.canceled`
+  - `payment.refunded`
 - Validates event envelope shape and logs structured messages
 - Uses manual ack/nack (`nack` without requeue for invalid/unhandled events)
 
@@ -42,6 +43,12 @@ Backend worker service for consuming Deliveroo domain events from RabbitMQ and p
 | `APP_VERSION`       | No       | `1.0.0`                                | Application version logged at startup  |
 | `RABBITMQ_EXCHANGE` | No       | `deliveroo.events`                     | Topic exchange name                    |
 | `RABBITMQ_QUEUE`    | No       | `notification.events`                  | Queue name                             |
+| `COMPANY_NAME`      | No       | `Deliveroo Clone`                      | Sender/display company name            |
+| `COMPANY_EMAIL`     | No       | `noreply@deliveroo-clone.local`        | Resend sender email                    |
+| `LOGO_URL`          | No       | `https://via.placeholder.com/150`      | Logo used in email templates           |
+| `SUPPORT_EMAIL`     | No       | `support@deliveroo-clone.local`        | Support email shown in templates       |
+| `APP_URL`           | No       | `http://localhost:3000`                | Frontend URL used for email links      |
+| `RESEND_API_KEY`    | No       | `re_development_key`                   | Resend API key                         |
 
 ## Local development
 
