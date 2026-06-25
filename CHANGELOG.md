@@ -1,9 +1,8 @@
 # [1.0.0-beta.3](https://github.com/DiluDevX/deliveroo-clone-notification-service/compare/v1.0.0-beta.2...v1.0.0-beta.3) (2026-06-25)
 
-
 ### Features
 
-* add email notifications for order placement and payment success ([7f034fe](https://github.com/DiluDevX/deliveroo-clone-notification-service/commit/7f034fe8c2c0f6b1e5d3bd820a44a1bd83f25c5f))
+- add email notifications for order placement and payment success ([7f034fe](https://github.com/DiluDevX/deliveroo-clone-notification-service/commit/7f034fe8c2c0f6b1e5d3bd820a44a1bd83f25c5f))
 
 # [1.0.0-beta.2](https://github.com/DiluDevX/deliveroo-clone-notification-service/compare/v1.0.0-beta.1...v1.0.0-beta.2) (2026-06-24)
 
