@@ -1,3 +1,10 @@
+# [1.0.0-beta.5](https://github.com/DiluDevX/deliveroo-clone-notification-service/compare/v1.0.0-beta.4...v1.0.0-beta.5) (2026-06-25)
+
+
+### Bug Fixes
+
+* trigger notifcation service azure deployment ([44700d2](https://github.com/DiluDevX/deliveroo-clone-notification-service/commit/44700d248c32cb5067e949eff37b270baac77490))
+
 # [1.0.0-beta.4](https://github.com/DiluDevX/deliveroo-clone-notification-service/compare/v1.0.0-beta.3...v1.0.0-beta.4) (2026-06-25)
 
 ### Bug Fixes
