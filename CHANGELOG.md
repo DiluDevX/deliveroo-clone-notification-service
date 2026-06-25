@@ -1,3 +1,10 @@
+# [1.0.0-beta.9](https://github.com/DiluDevX/deliveroo-clone-notification-service/compare/v1.0.0-beta.8...v1.0.0-beta.9) (2026-06-25)
+
+
+### Bug Fixes
+
+* normalize payment method comparison to lowercase ([2a06f1c](https://github.com/DiluDevX/deliveroo-clone-notification-service/commit/2a06f1c8fe640ec787f128fbf8ea63b6163ba4a0))
+
 # [1.0.0-beta.8](https://github.com/DiluDevX/deliveroo-clone-notification-service/compare/v1.0.0-beta.7...v1.0.0-beta.8) (2026-06-25)
 
 ### Bug Fixes
