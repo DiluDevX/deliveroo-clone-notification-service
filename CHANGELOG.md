@@ -1,3 +1,10 @@
+# [1.0.0-beta.10](https://github.com/DiluDevX/deliveroo-clone-notification-service/compare/v1.0.0-beta.9...v1.0.0-beta.10) (2026-06-26)
+
+
+### Features
+
+* enhance order and payment confirmation emails with updated content and styling ([97d40ff](https://github.com/DiluDevX/deliveroo-clone-notification-service/commit/97d40ffc6fafd70ccee28163673c393e98b94616))
+
 # [1.0.0-beta.9](https://github.com/DiluDevX/deliveroo-clone-notification-service/compare/v1.0.0-beta.8...v1.0.0-beta.9) (2026-06-25)
 
 ### Bug Fixes
