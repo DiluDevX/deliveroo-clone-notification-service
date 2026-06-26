@@ -1,3 +1,10 @@
+# [1.0.0-beta.11](https://github.com/DiluDevX/deliveroo-clone-notification-service/compare/v1.0.0-beta.10...v1.0.0-beta.11) (2026-06-26)
+
+
+### Features
+
+* integrate order service for enriched email notifications with order details ([6c99e8c](https://github.com/DiluDevX/deliveroo-clone-notification-service/commit/6c99e8c86f760f99e808a337f066f41ab143fbac))
+
 # [1.0.0-beta.10](https://github.com/DiluDevX/deliveroo-clone-notification-service/compare/v1.0.0-beta.9...v1.0.0-beta.10) (2026-06-26)
 
 ### Features
