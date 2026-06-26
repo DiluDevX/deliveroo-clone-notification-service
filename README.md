@@ -32,6 +32,54 @@ Backend worker service for consuming Deliveroo domain events from RabbitMQ and p
 }
 ```
 
+## Notification flow
+
+The notification service is an event consumer. It does not create orders, confirm payments, or own customer/order data. It reacts to domain events published by other services and turns those events into user-facing notifications.
+
+### Order placed email
+
+1. The user checks out through the BFF.
+2. The order service validates the cart, prices the order, creates the order, clears the cart, and publishes `order.created`.
+3. The `order.created` event includes an order snapshot:
+   - order id and order number
+   - user contact fields
+   - restaurant name/address
+   - delivery address
+   - payment method and payment status
+   - subtotal, fees, discount, and total
+   - order items, quantities, prices, and modifiers
+4. This service consumes `order.created`.
+5. If the order uses card payment, this service skips the order placed email and waits for `payment.succeeded`.
+6. If the order uses cash on delivery, this service sends the order placed email from the event snapshot.
+
+Card orders are skipped at `order.created` because a card order is only pending at that point. The customer should receive the final confirmation after the payment succeeds.
+
+### Payment succeeded email
+
+1. Stripe confirms the card payment through the payment service webhook/confirmation flow.
+2. The payment service updates its payment record, syncs payment status back to the order service, and publishes `payment.succeeded`.
+3. The `payment.succeeded` event stays payment-focused:
+   - payment id
+   - order id
+   - user id and contact fields
+   - amount/currency
+   - provider ids/status
+4. This service consumes `payment.succeeded`.
+5. This service fetches the order from order-service using `ORDER_SERVICE_URL` and `ORDER_SERVICE_API_KEY`.
+6. If order details are found, the payment email includes the order number, restaurant, total, and itemized order details.
+7. If order-service lookup fails, this service logs a warning and sends a simpler payment email using only the payment event data.
+
+The payment service should not publish full order details. Payment owns payment state; order-service owns order details. Fetching from order-service at notification time keeps that ownership clean.
+
+### RabbitMQ acknowledgement behavior
+
+- Valid and handled events are acknowledged after the handler completes.
+- Invalid payloads are nacked without requeue.
+- Handler failures are nacked without requeue.
+- Order lookup failure for `payment.succeeded` is treated as a degraded email path, not a handler failure.
+
+This means a temporary downstream issue can still produce a simpler email instead of losing the entire notification. A proper retry/DLQ flow should be added before treating this as production-grade messaging.
+
 ## Required environment variables
 
 | Variable                | Required | Default                                | Description                            |
