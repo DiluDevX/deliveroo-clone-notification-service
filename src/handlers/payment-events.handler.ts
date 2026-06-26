@@ -2,6 +2,13 @@ import { eventEnvelopeSchema, type EventEnvelope } from '../types/event-envelope
 import { logger } from '../utils/logger';
 import { z } from 'zod';
 import * as emailService from '../services/email.service';
+import * as orderService from '../services/order.service';
+import {
+  formatMajorAmount,
+  formatMinorAmount,
+  getCustomerName,
+  toEmailOrderItems,
+} from '../utils/email-formatters';
 
 const paymentEventDataSchema = z.object({
   paymentId: z.string().trim().min(1),
@@ -11,18 +18,14 @@ const paymentEventDataSchema = z.object({
   userFirstName: z.string().trim().min(1).optional(),
   userLastName: z.string().trim().min(1).optional(),
   amount: z.number(),
+  currency: z.string().trim().min(1).optional(),
+  paymentMethod: z.string().trim().min(1).optional(),
+  status: z.string().trim().min(1).optional(),
+  provider: z.string().trim().min(1).optional(),
+  providerPaymentId: z.string().trim().nullable().optional(),
+  providerPaymentIntentId: z.string().trim().nullable().optional(),
+  paidAt: z.string().trim().optional(),
 });
-
-const formatMinorAmount = (amount: number): string =>
-  new Intl.NumberFormat('en-GB', {
-    style: 'currency',
-    currency: 'GBP',
-  }).format(amount / 100);
-
-const getCustomerName = (firstName?: string, lastName?: string): string => {
-  const name = [firstName, lastName].filter(Boolean).join(' ').trim();
-  return name || 'there';
-};
 
 export async function handlePaymentEvent(
   payload: unknown,
@@ -52,11 +55,23 @@ export async function handlePaymentEvent(
       return envelope;
     }
 
+    const order = await orderService.getOrderById(payment.orderId);
+
+    if (!order) {
+      logger.warn(
+        { eventId: envelope.eventId, paymentId: payment.paymentId, orderId: payment.orderId },
+        'Payment email will be sent without order details'
+      );
+    }
+
     await emailService.sendPaymentSucceededEmail({
       to: payment.userEmail,
       orderId: payment.orderId,
+      orderNumber: order?.orderNumber,
       customerName: getCustomerName(payment.userFirstName, payment.userLastName),
-      totalAmount: formatMinorAmount(payment.amount),
+      restaurantName: order?.restaurantName,
+      totalAmount: order ? formatMajorAmount(order.totalAmount) : formatMinorAmount(payment.amount),
+      items: order ? toEmailOrderItems(order.items) : undefined,
     });
 
     logger.info(

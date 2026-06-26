@@ -37,6 +37,8 @@ const environmentSchema = z.object({
   SUPPORT_EMAIL: z.string().trim().email().default('support@deliveroo-clone.local'),
   APP_URL: z.string().trim().url().default('http://localhost:3000'),
   RESEND_API_KEY: z.string().trim().min(1).default('re_development_key'),
+  ORDER_SERVICE_URL: z.string().trim().url().default('http://localhost:4002'),
+  ORDER_SERVICE_API_KEY: z.string().trim().min(1).default('order-service-api-key'),
 });
 
 const parsedEnvironment = environmentSchema.safeParse(process.env);
@@ -72,5 +74,9 @@ export const environment = {
     supportEmail: env.SUPPORT_EMAIL,
     appUrl: env.APP_URL,
     resendApiKey: env.RESEND_API_KEY,
+  },
+  orderService: {
+    url: env.ORDER_SERVICE_URL,
+    apiKey: env.ORDER_SERVICE_API_KEY,
   },
 } as const;

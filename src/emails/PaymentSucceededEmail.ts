@@ -14,8 +14,15 @@ import {
 
 interface PaymentSucceededEmailProps {
   orderUrl: string;
+  orderNumber?: string;
   customerName: string;
+  restaurantName?: string;
   totalAmount: string;
+  items?: Array<{
+    name: string;
+    quantity: number;
+    lineTotal: string;
+  }>;
   companyName: string;
   supportEmail: string;
   logoUrl: string;
@@ -23,8 +30,11 @@ interface PaymentSucceededEmailProps {
 
 export const PaymentSucceededEmail = ({
   orderUrl,
+  orderNumber,
   customerName,
+  restaurantName,
   totalAmount,
+  items = [],
   companyName,
   supportEmail,
   logoUrl,
@@ -54,11 +64,29 @@ export const PaymentSucceededEmail = ({
           React.createElement(
             Text,
             { style: message },
-            `Hi ${customerName}, your card payment was successful. The restaurant can now start preparing your order.`
+            `Hi ${customerName}, your card payment was successful.${
+              restaurantName ? ` ${restaurantName} will now start preparing your order.` : ''
+            }`
           ),
           React.createElement(
             Section,
             { style: summary },
+            orderNumber
+              ? React.createElement(
+                  Text,
+                  { style: summaryLabel },
+                  'Order number',
+                  React.createElement('span', { style: summaryValue }, orderNumber)
+                )
+              : null,
+            restaurantName
+              ? React.createElement(
+                  Text,
+                  { style: summaryLabel },
+                  'Restaurant',
+                  React.createElement('span', { style: summaryValue }, restaurantName)
+                )
+              : null,
             React.createElement(
               Text,
               { style: summaryLabel },
@@ -78,6 +106,21 @@ export const PaymentSucceededEmail = ({
               React.createElement('span', { style: successValue }, 'Confirmed')
             )
           ),
+          items.length > 0
+            ? React.createElement(
+                Section,
+                { style: itemsSection },
+                React.createElement(Text, { style: sectionTitle }, 'Order items'),
+                items.map((item) =>
+                  React.createElement(
+                    Text,
+                    { key: `${item.name}-${item.quantity}`, style: itemRow },
+                    `${item.quantity}x ${item.name}`,
+                    React.createElement('span', { style: summaryValue }, item.lineTotal)
+                  )
+                )
+              )
+            : null,
           React.createElement(
             Section,
             { style: note },
@@ -186,6 +229,27 @@ const summary = {
   backgroundColor: '#f8fafa',
   border: '1px solid #e8ebeb',
   borderRadius: '8px',
+};
+
+const itemsSection = {
+  marginTop: '20px',
+  padding: '20px',
+  backgroundColor: '#ffffff',
+  border: '1px solid #e8ebeb',
+  borderRadius: '8px',
+};
+
+const sectionTitle = {
+  color: '#2e3333',
+  fontSize: '16px',
+  fontWeight: 700,
+  margin: '0 0 14px',
+};
+
+const itemRow = {
+  color: '#585c5c',
+  fontSize: '14px',
+  margin: '0 0 10px',
 };
 
 const summaryLabel = {

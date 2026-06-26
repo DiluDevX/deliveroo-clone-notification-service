@@ -4,6 +4,7 @@ import { environment } from '../config/environment';
 import { InternalServerError } from '../utils/errors';
 import OrderPlacedEmail from '../emails/OrderPlacedEmail';
 import PaymentSucceededEmail from '../emails/PaymentSucceededEmail';
+import { type EmailOrderItem } from '../types/email';
 
 const resend = new Resend(environment.mail.resendApiKey);
 
@@ -12,15 +13,21 @@ interface OrderPlacedEmailData {
   orderId: string;
   orderNumber: string;
   customerName: string;
+  restaurantName: string;
   totalAmount: string;
   paymentMethod: string;
+  deliveryAddress: string;
+  items: EmailOrderItem[];
 }
 
 interface PaymentSucceededEmailData {
   to: string;
   orderId: string;
+  orderNumber?: string;
   customerName: string;
+  restaurantName?: string;
   totalAmount: string;
+  items?: EmailOrderItem[];
 }
 
 const getOrderUrl = (orderId: string): string =>
@@ -32,8 +39,11 @@ export const sendOrderPlacedEmail = async (data: OrderPlacedEmailData): Promise<
       orderUrl: getOrderUrl(data.orderId),
       orderNumber: data.orderNumber,
       customerName: data.customerName,
+      restaurantName: data.restaurantName,
       totalAmount: data.totalAmount,
       paymentMethod: data.paymentMethod,
+      deliveryAddress: data.deliveryAddress,
+      items: data.items,
       companyName: environment.mail.companyName,
       supportEmail: environment.mail.supportEmail,
       logoUrl: environment.mail.logoUrl,
@@ -56,8 +66,11 @@ export const sendPaymentSucceededEmail = async (data: PaymentSucceededEmailData)
   const html = await render(
     PaymentSucceededEmail({
       orderUrl: getOrderUrl(data.orderId),
+      orderNumber: data.orderNumber,
       customerName: data.customerName,
+      restaurantName: data.restaurantName,
       totalAmount: data.totalAmount,
+      items: data.items,
       companyName: environment.mail.companyName,
       supportEmail: environment.mail.supportEmail,
       logoUrl: environment.mail.logoUrl,
@@ -67,7 +80,7 @@ export const sendPaymentSucceededEmail = async (data: PaymentSucceededEmailData)
   const { error } = await resend.emails.send({
     from: `${environment.mail.companyName} <${environment.mail.companyEmail}>`,
     to: data.to,
-    subject: 'Payment received',
+    subject: data.orderNumber ? `Payment received for ${data.orderNumber}` : 'Payment received',
     html,
   });
 

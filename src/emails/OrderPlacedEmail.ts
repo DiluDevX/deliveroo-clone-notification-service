@@ -16,8 +16,15 @@ interface OrderPlacedEmailProps {
   orderUrl: string;
   orderNumber: string;
   customerName: string;
+  restaurantName: string;
   totalAmount: string;
   paymentMethod: string;
+  deliveryAddress: string;
+  items: Array<{
+    name: string;
+    quantity: number;
+    lineTotal: string;
+  }>;
   companyName: string;
   supportEmail: string;
   logoUrl: string;
@@ -27,8 +34,11 @@ export const OrderPlacedEmail = ({
   orderUrl,
   orderNumber,
   customerName,
+  restaurantName,
   totalAmount,
   paymentMethod,
+  deliveryAddress,
+  items,
   companyName,
   supportEmail,
   logoUrl,
@@ -58,7 +68,7 @@ export const OrderPlacedEmail = ({
           React.createElement(
             Text,
             { style: message },
-            `Hi ${customerName}, your order ${orderNumber} has been placed.`
+            `Hi ${customerName}, your order from ${restaurantName} has been placed.`
           ),
           React.createElement(
             Section,
@@ -72,6 +82,12 @@ export const OrderPlacedEmail = ({
             React.createElement(
               Text,
               { style: summaryLabel },
+              'Restaurant',
+              React.createElement('span', { style: summaryValue }, restaurantName)
+            ),
+            React.createElement(
+              Text,
+              { style: summaryLabel },
               'Total',
               React.createElement('span', { style: summaryValue }, totalAmount)
             ),
@@ -80,6 +96,25 @@ export const OrderPlacedEmail = ({
               { style: summaryLabel },
               'Payment method',
               React.createElement('span', { style: summaryValue }, paymentMethod)
+            ),
+            React.createElement(
+              Text,
+              { style: summaryLabel },
+              'Delivery address',
+              React.createElement('span', { style: summaryValue }, deliveryAddress)
+            )
+          ),
+          React.createElement(
+            Section,
+            { style: itemsSection },
+            React.createElement(Text, { style: sectionTitle }, 'Order items'),
+            items.map((item) =>
+              React.createElement(
+                Text,
+                { key: `${item.name}-${item.quantity}`, style: itemRow },
+                `${item.quantity}x ${item.name}`,
+                React.createElement('span', { style: summaryValue }, item.lineTotal)
+              )
             )
           ),
           React.createElement(
@@ -192,6 +227,27 @@ const summary = {
   backgroundColor: '#f8fafa',
   border: '1px solid #e8ebeb',
   borderRadius: '8px',
+};
+
+const itemsSection = {
+  marginTop: '20px',
+  padding: '20px',
+  backgroundColor: '#ffffff',
+  border: '1px solid #e8ebeb',
+  borderRadius: '8px',
+};
+
+const sectionTitle = {
+  color: '#2e3333',
+  fontSize: '16px',
+  fontWeight: 700,
+  margin: '0 0 14px',
+};
+
+const itemRow = {
+  color: '#585c5c',
+  fontSize: '14px',
+  margin: '0 0 10px',
 };
 
 const summaryLabel = {

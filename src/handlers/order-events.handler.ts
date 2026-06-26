@@ -2,6 +2,13 @@ import { eventEnvelopeSchema, type EventEnvelope } from '../types/event-envelope
 import { logger } from '../utils/logger';
 import { z } from 'zod';
 import * as emailService from '../services/email.service';
+import { deliveryAddressSchema, orderItemSchema } from '../types/order-details';
+import {
+  formatDeliveryAddress,
+  formatMajorAmount,
+  getCustomerName,
+  toEmailOrderItems,
+} from '../utils/email-formatters';
 
 const orderCreatedDataSchema = z.object({
   orderId: z.string().trim().min(1),
@@ -10,20 +17,22 @@ const orderCreatedDataSchema = z.object({
   userEmail: z.string().trim().email().optional(),
   userFirstName: z.string().trim().min(1).optional(),
   userLastName: z.string().trim().min(1).optional(),
+  restaurantId: z.string().trim().min(1),
+  restaurantName: z.string().trim().min(1),
+  restaurantAddress: z.string().trim(),
+  subtotal: z.number(),
+  deliveryFee: z.number(),
+  serviceFee: z.number(),
+  discountAmount: z.number(),
   totalAmount: z.number(),
   paymentMethod: z.string().nullable(),
+  paymentStatus: z.string().trim().min(1),
+  status: z.string().trim().min(1),
+  deliveryAddress: deliveryAddressSchema,
+  items: z.array(orderItemSchema),
+  estimatedDeliveryAt: z.string().trim().nullable(),
+  createdAt: z.string().trim().min(1),
 });
-
-const formatAmount = (amount: number): string =>
-  new Intl.NumberFormat('en-GB', {
-    style: 'currency',
-    currency: 'GBP',
-  }).format(amount);
-
-const getCustomerName = (firstName?: string, lastName?: string): string => {
-  const name = [firstName, lastName].filter(Boolean).join(' ').trim();
-  return name || 'there';
-};
 
 export async function handleOrderEvent(
   payload: unknown,
@@ -66,8 +75,11 @@ export async function handleOrderEvent(
       orderId: order.orderId,
       orderNumber: order.orderNumber,
       customerName: getCustomerName(order.userFirstName, order.userLastName),
-      totalAmount: formatAmount(order.totalAmount),
+      restaurantName: order.restaurantName,
+      totalAmount: formatMajorAmount(order.totalAmount),
       paymentMethod: order.paymentMethod ?? 'Unknown',
+      deliveryAddress: formatDeliveryAddress(order.deliveryAddress),
+      items: toEmailOrderItems(order.items),
     });
 
     logger.info(

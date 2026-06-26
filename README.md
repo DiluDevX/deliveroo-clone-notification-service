@@ -17,6 +17,7 @@ Backend worker service for consuming Deliveroo domain events from RabbitMQ and p
   - `payment.canceled`
   - `payment.refunded`
 - Validates event envelope shape and logs structured messages
+- Sends enriched order/payment emails using order snapshots from events or order-service lookups
 - Uses manual ack/nack (`nack` without requeue for invalid/unhandled events)
 
 ## Event envelope
@@ -33,22 +34,24 @@ Backend worker service for consuming Deliveroo domain events from RabbitMQ and p
 
 ## Required environment variables
 
-| Variable            | Required | Default                                | Description                            |
-| ------------------- | -------- | -------------------------------------- | -------------------------------------- |
-| `PORT`              | No       | `4010`                                 | Health server port                     |
-| `RABBITMQ_URL`      | Yes      | -                                      | RabbitMQ connection URL (`amqp://...`) |
-| `SERVICE_NAME`      | No       | `deliveroo-clone-notification-service` | Service name in logs                   |
-| `NODE_ENV`          | No       | `development`                          | `development`, `production`, `test`    |
-| `LOG_LEVEL`         | No       | `info`                                 | Pino log level                         |
-| `APP_VERSION`       | No       | `1.0.0`                                | Application version logged at startup  |
-| `RABBITMQ_EXCHANGE` | No       | `deliveroo.events`                     | Topic exchange name                    |
-| `RABBITMQ_QUEUE`    | No       | `notification.events`                  | Queue name                             |
-| `COMPANY_NAME`      | No       | `Deliveroo Clone`                      | Sender/display company name            |
-| `COMPANY_EMAIL`     | No       | `noreply@deliveroo-clone.local`        | Resend sender email                    |
-| `LOGO_URL`          | No       | `https://via.placeholder.com/150`      | Logo used in email templates           |
-| `SUPPORT_EMAIL`     | No       | `support@deliveroo-clone.local`        | Support email shown in templates       |
-| `APP_URL`           | No       | `http://localhost:3000`                | Frontend URL used for email links      |
-| `RESEND_API_KEY`    | No       | `re_development_key`                   | Resend API key                         |
+| Variable                | Required | Default                                | Description                            |
+| ----------------------- | -------- | -------------------------------------- | -------------------------------------- |
+| `PORT`                  | No       | `4010`                                 | Health server port                     |
+| `RABBITMQ_URL`          | Yes      | -                                      | RabbitMQ connection URL (`amqp://...`) |
+| `SERVICE_NAME`          | No       | `deliveroo-clone-notification-service` | Service name in logs                   |
+| `NODE_ENV`              | No       | `development`                          | `development`, `production`, `test`    |
+| `LOG_LEVEL`             | No       | `info`                                 | Pino log level                         |
+| `APP_VERSION`           | No       | `1.0.0`                                | Application version logged at startup  |
+| `RABBITMQ_EXCHANGE`     | No       | `deliveroo.events`                     | Topic exchange name                    |
+| `RABBITMQ_QUEUE`        | No       | `notification.events`                  | Queue name                             |
+| `COMPANY_NAME`          | No       | `Deliveroo Clone`                      | Sender/display company name            |
+| `COMPANY_EMAIL`         | No       | `noreply@deliveroo-clone.local`        | Resend sender email                    |
+| `LOGO_URL`              | No       | `https://via.placeholder.com/150`      | Logo used in email templates           |
+| `SUPPORT_EMAIL`         | No       | `support@deliveroo-clone.local`        | Support email shown in templates       |
+| `APP_URL`               | No       | `http://localhost:3000`                | Frontend URL used for email links      |
+| `RESEND_API_KEY`        | No       | `re_development_key`                   | Resend API key                         |
+| `ORDER_SERVICE_URL`     | No       | `http://localhost:4002`                | Internal order-service base URL        |
+| `ORDER_SERVICE_API_KEY` | No       | `order-service-api-key`                | API key for order-service lookups      |
 
 ## Local development
 
@@ -115,6 +118,8 @@ LOG_LEVEL=info
 RABBITMQ_URL=amqp://deliveroo:strong-password@rabbitmq:5672
 RABBITMQ_EXCHANGE=deliveroo.events
 RABBITMQ_QUEUE=notification.events
+ORDER_SERVICE_URL=http://order-service:4002
+ORDER_SERVICE_API_KEY=order-service-api-key
 ```
 
 This service also expects the same repository/environment values used by the other Azure-deployed services:
