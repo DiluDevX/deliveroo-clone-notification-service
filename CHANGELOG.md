@@ -1,3 +1,10 @@
+# [1.0.0-beta.12](https://github.com/DiluDevX/deliveroo-clone-notification-service/compare/v1.0.0-beta.11...v1.0.0-beta.12) (2026-06-26)
+
+
+### Features
+
+* implement email notifications for payment and order cancellation events ([afd2918](https://github.com/DiluDevX/deliveroo-clone-notification-service/commit/afd29180297747e14740912c2154a2137bc14e82))
+
 # [1.0.0-beta.11](https://github.com/DiluDevX/deliveroo-clone-notification-service/compare/v1.0.0-beta.10...v1.0.0-beta.11) (2026-06-26)
 
 ### Features
