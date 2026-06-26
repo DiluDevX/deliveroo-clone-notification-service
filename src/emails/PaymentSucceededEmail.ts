@@ -43,16 +43,49 @@ export const PaymentSucceededEmail = ({
         React.createElement(
           Section,
           { style: header },
-          React.createElement(Img, { src: logoUrl, alt: companyName, style: logo })
+          React.createElement(Img, { src: logoUrl, alt: companyName, style: logo }),
+          React.createElement(Text, { style: eyebrow }, 'Order update')
         ),
         React.createElement(
           Section,
           { style: content },
-          React.createElement(Text, { style: title }, 'Payment Received'),
+          React.createElement(Text, { style: statusPill }, 'Payment received'),
+          React.createElement(Text, { style: title }, 'Your order is confirmed'),
           React.createElement(
             Text,
             { style: message },
-            `Hi ${customerName}, your card payment of ${totalAmount} was successful.`
+            `Hi ${customerName}, your card payment was successful. The restaurant can now start preparing your order.`
+          ),
+          React.createElement(
+            Section,
+            { style: summary },
+            React.createElement(
+              Text,
+              { style: summaryLabel },
+              'Amount paid',
+              React.createElement('span', { style: summaryValue }, totalAmount)
+            ),
+            React.createElement(
+              Text,
+              { style: summaryLabel },
+              'Payment method',
+              React.createElement('span', { style: summaryValue }, 'Card')
+            ),
+            React.createElement(
+              Text,
+              { style: summaryLabel },
+              'Status',
+              React.createElement('span', { style: successValue }, 'Confirmed')
+            )
+          ),
+          React.createElement(
+            Section,
+            { style: note },
+            React.createElement(
+              Text,
+              { style: noteText },
+              'You can open your order page to review the latest status and order details.'
+            )
           ),
           React.createElement(
             Section,
@@ -90,43 +123,107 @@ const container = {
   maxWidth: '600px',
   margin: '0 auto',
   backgroundColor: '#ffffff',
-  borderRadius: '8px',
+  borderRadius: '12px',
   overflow: 'hidden',
+  border: '1px solid #e8ebeb',
 };
 
 const header = {
-  backgroundColor: '#00ccbc',
-  padding: '30px 40px',
-  textAlign: 'center' as const,
+  backgroundColor: '#ffffff',
+  padding: '28px 40px 20px',
+  textAlign: 'left' as const,
+  borderTop: '6px solid #00ccbc',
 };
 
 const logo = {
-  maxWidth: '150px',
+  maxWidth: '140px',
   height: 'auto',
 };
 
+const eyebrow = {
+  color: '#828585',
+  fontSize: '13px',
+  fontWeight: 600,
+  letterSpacing: '0',
+  marginTop: '16px',
+  marginBottom: '0',
+};
+
 const content = {
-  padding: '40px',
+  padding: '28px 40px 40px',
+};
+
+const statusPill = {
+  display: 'inline-block',
+  backgroundColor: '#e6f8f6',
+  color: '#007e75',
+  borderRadius: '999px',
+  padding: '6px 12px',
+  fontSize: '13px',
+  fontWeight: 700,
+  margin: '0 0 18px',
 };
 
 const title = {
-  fontSize: '24px',
-  fontWeight: 600,
+  fontSize: '28px',
+  lineHeight: '34px',
+  fontWeight: 700,
   color: '#2e3333',
-  marginBottom: '20px',
-  textAlign: 'center' as const,
+  margin: '0 0 16px',
+  textAlign: 'left' as const,
 };
 
 const message = {
   fontSize: '16px',
+  lineHeight: '24px',
   color: '#585c5c',
-  marginBottom: '30px',
-  textAlign: 'center' as const,
+  margin: '0 0 24px',
+  textAlign: 'left' as const,
+};
+
+const summary = {
+  padding: '20px',
+  backgroundColor: '#f8fafa',
+  border: '1px solid #e8ebeb',
+  borderRadius: '8px',
+};
+
+const summaryLabel = {
+  color: '#585c5c',
+  fontSize: '14px',
+  margin: '0 0 12px',
+};
+
+const summaryValue = {
+  float: 'right' as const,
+  color: '#2e3333',
+  fontWeight: 700,
+};
+
+const successValue = {
+  float: 'right' as const,
+  color: '#007e75',
+  fontWeight: 700,
+};
+
+const note = {
+  marginTop: '20px',
+  padding: '16px',
+  backgroundColor: '#fff9f0',
+  borderLeft: '4px solid #fabb00',
+  borderRadius: '6px',
+};
+
+const noteText = {
+  color: '#585c5c',
+  fontSize: '14px',
+  lineHeight: '21px',
+  margin: '0',
 };
 
 const buttonContainer = {
-  textAlign: 'center' as const,
-  margin: '30px 0',
+  textAlign: 'left' as const,
+  margin: '28px 0 0',
 };
 
 const button = {
@@ -134,9 +231,9 @@ const button = {
   color: '#ffffff',
   textDecoration: 'none',
   padding: '16px 32px',
-  borderRadius: '4px',
+  borderRadius: '6px',
   fontSize: '16px',
-  fontWeight: 600,
+  fontWeight: 700,
 };
 
 const link = {
@@ -146,9 +243,9 @@ const link = {
 };
 
 const footer = {
-  padding: '30px 40px',
+  padding: '28px 40px',
   backgroundColor: '#f6f6f6',
-  textAlign: 'center' as const,
+  textAlign: 'left' as const,
   borderTop: '1px solid #e8ebeb',
 };
 
