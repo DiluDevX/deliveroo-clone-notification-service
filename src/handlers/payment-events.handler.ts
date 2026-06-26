@@ -27,6 +27,77 @@ const paymentEventDataSchema = z.object({
   paidAt: z.string().trim().optional(),
 });
 
+type PaymentEventData = z.infer<typeof paymentEventDataSchema>;
+type PaymentStatusRoutingKey = 'payment.failed' | 'payment.canceled' | 'payment.refunded';
+
+const getPaymentStatusEmailSender = (
+  routingKey: PaymentStatusRoutingKey
+): typeof emailService.sendPaymentFailedEmail => {
+  switch (routingKey) {
+    case 'payment.failed':
+      return emailService.sendPaymentFailedEmail;
+    case 'payment.canceled':
+      return emailService.sendPaymentCanceledEmail;
+    case 'payment.refunded':
+      return emailService.sendPaymentRefundedEmail;
+  }
+};
+
+const getPaymentStatusLogMessage = (routingKey: PaymentStatusRoutingKey): string => {
+  switch (routingKey) {
+    case 'payment.failed':
+      return 'Payment failed email sent';
+    case 'payment.canceled':
+      return 'Payment cancelled email sent';
+    case 'payment.refunded':
+      return 'Payment refunded email sent';
+  }
+};
+
+const sendPaymentStatusEmail = async (
+  envelope: EventEnvelope,
+  payment: PaymentEventData,
+  routingKey: PaymentStatusRoutingKey
+): Promise<void> => {
+  if (!payment.userEmail) {
+    logger.warn(
+      { eventId: envelope.eventId, paymentId: payment.paymentId, userId: payment.userId },
+      'Payment event does not include user email. Email notification skipped'
+    );
+    return;
+  }
+
+  const order = await orderService.getOrderById(payment.orderId);
+
+  if (!order) {
+    logger.warn(
+      { eventId: envelope.eventId, paymentId: payment.paymentId, orderId: payment.orderId },
+      'Payment status email will be sent without order details'
+    );
+  }
+
+  const sendEmail = getPaymentStatusEmailSender(routingKey);
+
+  await sendEmail({
+    to: payment.userEmail,
+    orderId: payment.orderId,
+    orderNumber: order?.orderNumber,
+    customerName: getCustomerName(payment.userFirstName, payment.userLastName),
+    restaurantName: order?.restaurantName,
+    totalAmount: order ? formatMajorAmount(order.totalAmount) : formatMinorAmount(payment.amount),
+  });
+
+  logger.info(
+    {
+      eventId: envelope.eventId,
+      paymentId: payment.paymentId,
+      orderId: payment.orderId,
+      to: payment.userEmail,
+    },
+    getPaymentStatusLogMessage(routingKey)
+  );
+};
+
 export async function handlePaymentEvent(
   payload: unknown,
   routingKey: string
@@ -78,6 +149,15 @@ export async function handlePaymentEvent(
       { eventId: envelope.eventId, paymentId: payment.paymentId, to: payment.userEmail },
       'Payment succeeded email sent'
     );
+  }
+
+  if (
+    routingKey === 'payment.failed' ||
+    routingKey === 'payment.canceled' ||
+    routingKey === 'payment.refunded'
+  ) {
+    const payment = paymentEventDataSchema.parse(envelope.data);
+    await sendPaymentStatusEmail(envelope, payment, routingKey);
   }
 
   return envelope;

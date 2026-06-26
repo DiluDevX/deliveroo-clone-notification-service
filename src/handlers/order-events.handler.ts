@@ -34,6 +34,11 @@ const orderCreatedDataSchema = z.object({
   createdAt: z.string().trim().min(1),
 });
 
+const orderCancelledDataSchema = orderCreatedDataSchema.extend({
+  cancellationReason: z.string().trim().nullable().optional(),
+  cancelledAt: z.string().trim().nullable().optional(),
+});
+
 export async function handleOrderEvent(
   payload: unknown,
   routingKey: string
@@ -85,6 +90,40 @@ export async function handleOrderEvent(
     logger.info(
       { eventId: envelope.eventId, orderId: order.orderId, to: order.userEmail },
       'Order placed email sent'
+    );
+  }
+
+  if (routingKey === 'order.cancelled') {
+    const order = orderCancelledDataSchema.parse(envelope.data);
+
+    if (!order.userEmail) {
+      logger.warn(
+        { eventId: envelope.eventId, orderId: order.orderId, userId: order.userId },
+        'Order event does not include user email. Email notification skipped'
+      );
+      return envelope;
+    }
+
+    await emailService.sendOrderCancelledEmail({
+      to: order.userEmail,
+      orderId: order.orderId,
+      orderNumber: order.orderNumber,
+      customerName: getCustomerName(order.userFirstName, order.userLastName),
+      restaurantName: order.restaurantName,
+      totalAmount: formatMajorAmount(order.totalAmount),
+      cancellationReason: order.cancellationReason ?? undefined,
+    });
+
+    logger.info(
+      { eventId: envelope.eventId, orderId: order.orderId, to: order.userEmail },
+      'Order cancelled email sent'
+    );
+  }
+
+  if (routingKey === 'order.confirmed') {
+    logger.info(
+      { eventId: envelope.eventId },
+      'Order confirmed event received. Email skipped to avoid duplicate confirmation messages'
     );
   }
 

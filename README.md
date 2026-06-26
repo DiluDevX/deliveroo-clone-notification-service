@@ -71,6 +71,28 @@ Card orders are skipped at `order.created` because a card order is only pending 
 
 The payment service should not publish full order details. Payment owns payment state; order-service owns order details. Fetching from order-service at notification time keeps that ownership clean.
 
+### Payment failure, cancellation, and refund emails
+
+The payment service also publishes:
+
+- `payment.failed`
+- `payment.canceled`
+- `payment.refunded`
+
+This service handles each event with a separate email template:
+
+- payment failed: tells the user the card payment did not go through
+- payment cancelled: tells the user the payment was cancelled
+- payment refunded: tells the user a refund was processed
+
+For each of these events, this service fetches order details from order-service when possible. If the lookup fails, the email still sends with the payment event data so the user receives the important update.
+
+### Order cancelled email
+
+This service has an `order.cancelled` handler and template. It expects the order cancellation event to include an order snapshot similar to `order.created`, plus an optional cancellation reason.
+
+At the time of writing, order-service must publish `order.cancelled` before this email can be triggered. The notification-service side is ready, but the producer event is a separate order-service responsibility.
+
 ### RabbitMQ acknowledgement behavior
 
 - Valid and handled events are acknowledged after the handler completes.
